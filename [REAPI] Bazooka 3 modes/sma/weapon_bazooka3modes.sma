@@ -724,12 +724,11 @@ stock bool:is_valid_enemy(const pTarget, const pPlayer)
 @Player_reset_camera(const pPlayer) {
 	if (is_user_alive(pPlayer) && pControlling[pPlayer])
 	{
-		if (get_player_camera_have(pPlayer)) {
+		if (get_camera_have(pPlayer)) {
 			create_player_camera(pPlayer)
 			return
 		}
 
-		pVars[pPlayer][CAM_HAVE] = false
 		engset_view(pPlayer, pPlayer)
 		pControlling[pPlayer] = false
 	}
