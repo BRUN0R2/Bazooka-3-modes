@@ -51,6 +51,7 @@ const WeaponIdType:WEAPON_ID = WEAPON_GALIL
 new const WEAPON_REFERENCE[] = "weapon_galil"
 new const WEAPON_EXTENSION[] = "grenade"
 new const WEAPON_WEAPOLIST[] = "rezombie/weapons/bazooka/hud"
+new const WEAPON_ROCKET_CLASSNAME[] = "rocket"
 
 const ENTITY_INTOLERANCE = 100
 
@@ -78,6 +79,8 @@ new gl_pWeaponImpulse,
 
 new Float:g_NextPlayerUpdate[MAX_PLAYERS + 1]
 new pControlling[MAX_PLAYERS + 1]
+
+new HookChain:HookChain_deathNoticePostHook
 
 public plugin_precache()
 {
@@ -116,6 +119,9 @@ public plugin_init()
 	RegisterHookChain(RG_CBasePlayerWeapon_DefaultReload, "@CBasePlayerWeapon_DefaultReload_Pre", .post = false)
 	RegisterHookChain(RG_CBasePlayerWeapon_SendWeaponAnim, "@CBasePlayerWeapon_SendWeaponAnim_Pre", .post = false);
 	//RegisterHookChain(RG_CSGameRules_SendDeathMessage, "@CSGameRules_SendDeathMessage_Pre", .post = false);
+
+	RegisterHookChain(RG_CSGameRules_DeathNotice, "@CSGameRules_DeathNotice_Pre", .post = false)
+	DisableHookChain((HookChain_deathNoticePostHook = RegisterHookChain(RG_CSGameRules_DeathNotice, "@CSGameRules_DeathNotice_Post", .post = true)))
 
 	RegisterHam(Ham_Spawn,					WEAPON_REFERENCE,	"@HamHook_Weapon_Spawn_Post", .Post = true)
 	RegisterHam(Ham_Item_ItemSlot,			WEAPON_REFERENCE,	"@HamHook_Weapon_Slot_Pre", .Post = false)
@@ -270,6 +276,42 @@ public rz_class_change_pre(id, attacker, class) {
 	}
 	rz_send_weapon_animation(pWeapon, get_member(pWeapon, m_pPlayer), iAnim)
 	return HC_SUPERCEDE
+}
+
+@CSGameRules_DeathNotice_Pre(const victim, const attacker, const inflictor)
+{
+	if (!is_user_connected(attacker) || is_nullent(inflictor)) {
+		return
+	}
+
+	if (victim != attacker && inflictor != attacker && FClassnameIs(inflictor, WEAPON_ROCKET_CLASSNAME)) {
+		new nameattacker[32], name[32]
+		get_entvar(attacker, var_netname, nameattacker, charsmax(nameattacker))
+
+		if (strlen(nameattacker) > 16) {
+		formatex(name, charsmax(name), "%.16s [ʙᴀᴢᴏᴏᴋᴀ]", nameattacker)
+		} else {
+		formatex(name, charsmax(name), "%s [ʙᴀᴢᴏᴏᴋᴀ]", nameattacker); }  
+		message_begin(MSG_ALL, SVC_UPDATEUSERINFO)
+		write_byte(attacker - 1)
+		write_long(get_user_userid(attacker))
+		write_char('\')
+		write_char('n')
+		write_char('a')
+		write_char('m')
+		write_char('e')
+		write_char('\')
+		write_string(name)
+		for(new i = 0; i < 16; i++) write_byte(0);
+		message_end()
+
+		EnableHookChain(HookChain_deathNoticePostHook)
+	}
+}
+
+@CSGameRules_DeathNotice_Post(const victim, const attacker, const inflictor) {
+	rh_update_user_info(attacker)
+	DisableHookChain(HookChain_deathNoticePostHook)
 }
 
 @HamHook_Weapon_Spawn_Post(const pWeapon)
@@ -430,7 +472,7 @@ public rz_class_change_pre(id, attacker, class) {
 
 	xs_vec_add_scaled(pVecSrc, vecDirect, 15.0, pVecSrc)
 
-	set_entvar(pMissile, var_classname, "ent_rocket")
+	set_entvar(pMissile, var_classname, WEAPON_ROCKET_CLASSNAME)
 	set_entvar(pMissile, var_solid, SOLID_BBOX)
 	set_entvar(pMissile, var_movetype, MOVETYPE_FLYMISSILE)
 	set_entvar(pMissile, var_dmg_inflictor, pWeapon)
@@ -628,7 +670,6 @@ stock entity_follow_and_aim_target(const pEntity, const pTarget, Float:pSpeed)
 
 	Create_bazooka_damage(
 		pMissile,
-		pWeapon,
 		pPlayer,
 		WEAPON_DMG_RADIUS,
 		WEAPON_MAX_DAMAGE,
@@ -636,7 +677,7 @@ stock entity_follow_and_aim_target(const pEntity, const pTarget, Float:pSpeed)
 	)
 }
 
-stock Create_bazooka_damage(const pEntity, const pWeapon, const pPlayer, const Float:pDamageRadius, const Float:pMaxDamage, const pDmgType = DMG_GENERIC)
+stock Create_bazooka_damage(const pEntity, const pPlayer, const Float:pDamageRadius, const Float:pMaxDamage, const pDmgType = DMG_GENERIC)
 {
 	for (new pTarget = 1; pTarget <= engfunc(EngFunc_NumberOfEntities); pTarget++)
 	{
@@ -657,14 +698,14 @@ stock Create_bazooka_damage(const pEntity, const pWeapon, const pPlayer, const F
 			set_member(pTarget, m_LastHitGroup, HIT_GENERIC)
 
 			rg_multidmg_clear()
-			rg_multidmg_add(pWeapon, pTarget, pDamage, pDmgType)
-			rg_multidmg_apply(pWeapon, pPlayer)
+			rg_multidmg_add(pEntity, pTarget, pDamage, pDmgType)
+			rg_multidmg_apply(pEntity, pPlayer)
 		}
 		// Damage to entities
 		else if (!is_nullent(pTarget)) {
 			rg_multidmg_clear()
-			rg_multidmg_add(pWeapon, pTarget, pDamage, pDmgType)
-			rg_multidmg_apply(pWeapon, pPlayer)
+			rg_multidmg_add(pEntity, pTarget, pDamage, pDmgType)
+			rg_multidmg_apply(pEntity, pPlayer)
 		}
 	}
 }
