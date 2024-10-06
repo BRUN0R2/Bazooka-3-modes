@@ -114,6 +114,8 @@ public plugin_precache()
 public plugin_init()
 {
 	register_forward(FM_UpdateClientData, "@FM_Player_Update_Data_Post", true)
+	register_forward(FM_AddToFullPack, "FM_AddToFullPack_Post", true)
+
 	RegisterHookChain(RG_CBasePlayer_Observer_IsValidTarget, "@CBasePlayer_Observer_IsValidTarget_Post", .post = true)
 	RegisterHookChain(RG_CBasePlayerWeapon_DefaultDeploy, "@CBasePlayerWeapon_DefaultDeploy_Pre", .post = false);
 	RegisterHookChain(RG_CBasePlayerWeapon_DefaultReload, "@CBasePlayerWeapon_DefaultReload_Pre", .post = false)
@@ -289,9 +291,9 @@ public rz_class_change_pre(id, attacker, class) {
 		get_entvar(attacker, var_netname, nameattacker, charsmax(nameattacker))
 
 		if (strlen(nameattacker) > 16) {
-		formatex(name, charsmax(name), "%.16s [ʙᴀᴢᴏᴏᴋᴀ]", nameattacker)
+		formatex(name, charsmax(name), "%.16s (Bazooka)", nameattacker)
 		} else {
-		formatex(name, charsmax(name), "%s [ʙᴀᴢᴏᴏᴋᴀ]", nameattacker); }  
+		formatex(name, charsmax(name), "%s (Bazooka)", nameattacker); }  
 		message_begin(MSG_ALL, SVC_UPDATEUSERINFO)
 		write_byte(attacker - 1)
 		write_long(get_user_userid(attacker))
@@ -490,7 +492,7 @@ public rz_class_change_pre(id, attacker, class) {
 
 	rh_emit_sound2(pMissile, 0, CHAN_WEAPON, WEAPON_SOUNDS[1])
 
-	set_entvar(pMissile, var_effects, EF_BRIGHTLIGHT)
+	set_entvar(pMissile, var_effects, EF_BRIGHTLIGHT);
 
 	if (get_member(pWeapon, m_Weapon_iWeaponState) == STATE_CAMERA) {
 		breaks_player_camera(pPlayer)
@@ -504,6 +506,29 @@ public rz_class_change_pre(id, attacker, class) {
 	rz_util_te_beamfollow(pMissile, g_pModelIndexSmoke, 7, 1, {255, 255, 255, 255});
 
 	set_entvar(pMissile, var_nextthink, get_gametime() + 0.08);
+}
+
+public FM_AddToFullPack_Post(const es_handle, const e, const ent, const host, const hostflags, const player, const pset)
+{
+	if (!ent || !host || ent == host || is_nullent(ent) || !is_user_connected(host))
+		return FMRES_IGNORED;
+
+	if (!FClassnameIs(ent, WEAPON_ROCKET_CLASSNAME))
+		return FMRES_IGNORED;
+
+	static pOwner; pOwner = get_entvar(ent, var_owner);
+
+	if (!pOwner || !is_user_connected(pOwner) || !is_user_alive(pOwner) || host != pOwner)
+		return FMRES_IGNORED;
+
+	static pWeapon; pWeapon = get_entvar(ent, var_dmg_inflictor)
+	if (get_member(pWeapon, m_Weapon_iWeaponState) != STATE_CAMERA) {
+		return FMRES_IGNORED;
+	}
+
+	set_es(es_handle, ES_RenderMode, kRenderTransColor);
+	forward_return(FMV_CELL, 0);
+	return FMRES_IGNORED;
 }
 
 @Missile_entity_think(const pMissile)
@@ -552,32 +577,32 @@ public rz_class_change_pre(id, attacker, class) {
 
 stock entity_follow_and_aim_target(const pEntity, const pTarget, Float:pSpeed)
 {
-    if (is_nullent(pEntity) || is_nullent(pTarget)) return
+	if (is_nullent(pEntity) || is_nullent(pTarget)) return
 
-    static Float:EntOrigin[3], Float:VicOrigin[3], Float:fl_Velocity[3],
+	static Float:EntOrigin[3], Float:VicOrigin[3], Float:fl_Velocity[3],
 	Float:direction[3], Float:NewAngle[3];
 
-    rz_util_get_entity_center(pEntity, EntOrigin)
-    rz_util_get_entity_center(pTarget, VicOrigin)
+	rz_util_get_entity_center(pEntity, EntOrigin)
+	rz_util_get_entity_center(pTarget, VicOrigin)
 
-    direction[0] = VicOrigin[0] - EntOrigin[0] // Direção X
-    direction[1] = VicOrigin[1] - EntOrigin[1] // Direção Y
-    direction[2] = VicOrigin[2] - EntOrigin[2] // Direção Z
+	direction[0] = VicOrigin[0] - EntOrigin[0] // Direção X
+	direction[1] = VicOrigin[1] - EntOrigin[1] // Direção Y
+	direction[2] = VicOrigin[2] - EntOrigin[2] // Direção Z
 
-    xs_vec_normalize(direction, direction)
+	xs_vec_normalize(direction, direction)
 
-    fl_Velocity[0] = direction[0] * pSpeed
-    fl_Velocity[1] = direction[1] * pSpeed
-    fl_Velocity[2] = direction[2] * pSpeed
+	fl_Velocity[0] = direction[0] * pSpeed
+	fl_Velocity[1] = direction[1] * pSpeed
+	fl_Velocity[2] = direction[2] * pSpeed
 
-    set_entvar(pEntity, var_velocity, fl_Velocity)
+	set_entvar(pEntity, var_velocity, fl_Velocity)
 
-    // Converter para graus
-    NewAngle[0] = floatatan2(direction[2], vector_length(direction), radian) * (180.0 / M_PI) // Pitch
-    NewAngle[1] = floatatan2(direction[1], direction[0], radian) * (180.0 / M_PI)   // Yaw
-    NewAngle[2] = 0.0                       // Roll
+	// Converter para graus
+	NewAngle[0] = floatatan2(direction[2], vector_length(direction), radian) * (180.0 / M_PI) // Pitch
+	NewAngle[1] = floatatan2(direction[1], direction[0], radian) * (180.0 / M_PI)   // Yaw
+	NewAngle[2] = 0.0                       // Roll
 
-    set_entvar(pEntity, var_angles, NewAngle)
+	set_entvar(pEntity, var_angles, NewAngle)
 }
 
 @Missile_entity_touch(const pMissile)
