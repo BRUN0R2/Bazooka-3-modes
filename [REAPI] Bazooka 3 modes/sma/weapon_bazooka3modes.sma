@@ -590,18 +590,13 @@ stock entity_follow_and_aim_target(const pEntity, const pTarget, Float:pSpeed)
 
 	set_entvar(pMissile, var_solid, SOLID_NOT)
 
-	new Float:pVelocity[3]
-	get_entvar(pMissile, var_velocity, pVelocity)
+	new Float:pVelocity[3]; get_entvar(pMissile, var_velocity, pVelocity)
+
 	xs_vec_normalize(pVelocity, pVelocity);
 
-	new Float:pOrigin[3]
-	get_entvar(pMissile, var_origin, pOrigin)
-
-	new Float:pVecSpot[3]
-	xs_vec_sub_scaled(pOrigin, pVelocity, 32.0, pVecSpot)
-
-	new Float:pVecDest[3]
-	xs_vec_add_scaled(pVecSpot, pVelocity, 64.0, pVecDest)
+	new Float:pOrigin[3]; get_entvar(pMissile, var_origin, pOrigin)
+	new Float:pVecSpot[3];xs_vec_sub_scaled(pOrigin, pVelocity, 32.0, pVecSpot)
+	new Float:pVecDest[3];xs_vec_add_scaled(pVecSpot, pVelocity, 64.0, pVecDest)
 
 	new pTrace = create_tr2()
 	engfunc(EngFunc_TraceLine, pVecSpot, pVecDest, IGNORE_MONSTERS, pMissile, pTrace)
