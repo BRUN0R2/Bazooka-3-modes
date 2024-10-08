@@ -551,7 +551,7 @@ public FM_AddToFullPack_Post(const es_handle, const e, const ent, const host, co
 		}
 	}
 	// You must have 500 FPS+, don't touch here :)
-	set_entvar(pMissile, var_nextthink, get_gametime() + 0.01)
+	set_entvar(pMissile, var_nextthink, get_gametime())
 }
 
 @Missile_camera_think(const pMissile, const pPlayer)
