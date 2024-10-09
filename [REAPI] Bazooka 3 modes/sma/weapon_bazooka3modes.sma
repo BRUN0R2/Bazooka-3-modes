@@ -571,7 +571,7 @@ public FM_AddToFullPack_Post(const es_handle, const e, const ent, const host, co
 
 @Missile_hoaming_think(const pMissile, const pPlayer)
 {
-	static pTarget; pTarget = find_entity_target(pMissile, pPlayer)
+	static pTarget; pTarget = rz_util_find_target(pMissile, pPlayer)
 	entity_follow_and_aim_target(pMissile, pTarget, WEAPON_HOAMING_SPEED)
 }
 
@@ -712,7 +712,7 @@ stock Create_bazooka_damage(const pEntity, const pPlayer, const Float:pDamageRad
 
 		if (!is_nullent(pTarget) && is_user_alive(pTarget))
 		{
-			if (!is_valid_enemy(pTarget, pPlayer))
+			if (!rz_util_valid_enemy(pTarget, pPlayer))
 				continue;
 
 			set_member(pTarget, m_LastHitGroup, HIT_GENERIC)
@@ -736,50 +736,6 @@ stock Create_bazooka_damage(const pEntity, const pPlayer, const Float:pDamageRad
 	new Float:pOrigin[3]; get_entvar(pEntity, var_origin, pOrigin)
 	rz_util_te_smoke(pOrigin, g_pModelIndexSmoke, 35 + random_num(0, 10), 15)
 	rg_remove_entity(pEntity)
-}
-
-stock find_entity_target(const pEntity, const pPlayer, const Float:pRange = 7999.9)
-{
-	new Float:closestDistance = pRange;
-	new pClosestEnemy = NULLENT;
-
-	for (new pTarget = 1; pTarget <= engfunc(EngFunc_NumberOfEntities); pTarget++)
-	{
-		if (get_entvar(pTarget, var_takedamage) == DAMAGE_NO)
-			continue;
-
-		if (!rz_util_entity_visible(pEntity, pTarget))
-			continue;
-
-		new Float:pDistance = rz_util_entity_range(pEntity, pTarget);
-
-		if (!is_user_alive(pTarget))
-			continue;
-
-		if (!is_valid_enemy(pTarget, pPlayer))
-			continue;
-
-		if (pDistance < closestDistance) {
-			closestDistance = pDistance;
-			pClosestEnemy = pTarget;
-		}
-	}
-
-	return pClosestEnemy;
-}
-
-stock bool:is_valid_enemy(const pTarget, const pPlayer)
-{
-	if (GetProtectionState(pTarget))
-		return false
-
-	if (rz_util_similar_team(pTarget, pPlayer))
-		return false
-
-	if (!rg_is_player_can_takedamage(pTarget, pPlayer))
-		return false
-
-	return true
 }
 
 @Player_reset_camera(const pPlayer) {
