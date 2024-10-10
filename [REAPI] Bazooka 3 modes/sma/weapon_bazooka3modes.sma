@@ -518,10 +518,11 @@ public FM_AddToFullPack_Post(const es_handle, const e, const ent, const host, co
 
 	static pOwner; pOwner = get_entvar(ent, var_owner);
 
-	if (!pOwner || !is_user_connected(pOwner) || !is_user_alive(pOwner) || host != pOwner)
+	if (!pOwner || !is_user_alive(pOwner) || host != pOwner)
 		return FMRES_IGNORED;
 
 	static pWeapon; pWeapon = get_entvar(ent, var_dmg_inflictor)
+	if (is_nullent(pWeapon)) return FMRES_IGNORED;
 	if (get_member(pWeapon, m_Weapon_iWeaponState) != STATE_CAMERA) {
 		return FMRES_IGNORED;
 	}
